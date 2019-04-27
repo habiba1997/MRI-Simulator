@@ -26,13 +26,13 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         super(ApplicationWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.pushButton_2.clicked.connect (self.browse)
-        self.ui.comboBox_2.currentTextChanged.connect(self.Property)
+        self.ui.browse.clicked.connect (self.browse)
+        self.ui.property.currentTextChanged.connect(self.Property)
         self.ui.label.mousePressEvent =self.getpos
-        self.ui.comboBox.currentTextChanged.connect(self.shape)
-        self.ui.comboBox_3.currentTextChanged.connect(self.phantom_size)
-        self.ui.pushButton.clicked.connect (self.create)
-        self.ui.pushButton_3.clicked.connect (self.Start)
+        self.ui.PhantomShape.currentTextChanged.connect(self.shape)
+        self.ui.PhantomSize.currentTextChanged.connect(self.phantom_size)
+        self.ui.createPhantom.clicked.connect (self.create)
+        self.ui.start.clicked.connect (self.Start)
         self.ui.horizontalSlider.valueChanged.connect(self.slider)
         self.plotWindow = self.ui.T1
         self.plotWindow2 = self.ui.T2
@@ -354,17 +354,73 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.T=self.ui.time_span.value()
         print(self.T)
         
-    def Start(self): 
+    def Start(self):
+        Acquisition = self.ui.buttonGroup.checkedId()
+        print(Acquisition)
         self.TE() 
         self.TR()
         self.FA() 
         self.Kspace =  np.zeros((self.size,self.size),dtype=np.complex_)
         #self.KspaceSave = abs(copy.deepcopy(Kspace))
         self.fileName5 = "Kspace.png"
-        self.ForLoops()
+        
+        if (Acquisition==-1):
+            QMessageBox.about(self, "Error", "you should choose the acquisition seqi=uence first")
+        elif (Acquisition==-4):
+            self.SSFPForLoops()
+        elif (Acquisition==-2):
+            self.GREForLoops()
     
+
+
+    def SSFPForLoops(self):    
+        vector= np.matrix ([0,0,1])  
+
+        self.signal = [[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
+        angle60 = True
+
+        for i in range(self.size):
+            for j in range(self.size):
+                self.signal[i][j] =  self.rotationAroundYaxisMatrix(30,vector)
+                self.signal[i][j] = self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
+                self.signal[i][j] = self.recoveryDecayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.tr)
+
+
+        for Ki in range(self.Kspace.shape[0]):
+            print('Ki: ',Ki)
+            #move in each image pixel            
+            if angle60 :
+                theta = -60
+            else:
+                theta = 60
+
+            for i in range(self.size):
+                    for j in range(self.size):
+                        self.signal[i][j] =  self.rotationAroundYaxisMatrix(theta,np.matrix(self.signal[i][j]))
+                        self.signal[i][j] =  self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
+
+            # for kspace column
+            for Kj in range ( self.Kspace.shape[1]):
+                print('Kj: ',Kj)
+                GxStep = ((2 * math.pi) /  self.Kspace.shape[0]) * Kj
+                GyStep = ((2 * math.pi) / self.Kspace.shape[1]) * Ki            
+                
+                for i in range(self.size):
+                    for j in range(self.size):
+                        totalTheta = (GxStep*j)+ (GyStep*i)
+                        z = abs(complex(np.ravel(self.signal[i][j])[0],np.ravel(self.signal[i][j])[1]))
+                        self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
+            
+            for i in range(self.size):
+                for j in range(self.size):
+                    self.signal[i][j] = self.rotationAroundYaxisMatrix(theta, vector) #Trial
+                    self.signal[i][j] = self.recoveryDecayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]), self.tr)
+                    self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
+
+            angle60 = not angle60
+        self.ReconstructionImageAndKspace()
     
-    def ForLoops(self): 
+    def GREForLoops(self): 
         vector= np.matrix ([0,0,1])  
         self.signal=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
         self.recoverySignal=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
@@ -402,23 +458,19 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                         self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
 
             self.signal = copy.deepcopy(self.recoverySignal)
-            
-            #start = False
+        
+        self.ReconstructionImageAndKspace()
 
-            
-        print("DONE")
+    
+    def ReconstructionImageAndKspace(self):
         KspaceSave =abs(copy.deepcopy(self.Kspace))
         print(self.Kspace)
         imsave('kspace.png', KspaceSave)
-        print("DONE1")
         self.ui.label_2.setPixmap(QtGui.QPixmap('kspace.png').scaled(512,512))
-        print("DONE2")
         Kspacefft = np.fft.fft2(self.Kspace)
         #Kspaceifft = np.fft.ifft2(self.Kspace)
-        print("DONE3")
         Kspacefft = abs(Kspacefft)
         imsave("image.png", Kspacefft)
-        print("DONE4")
         pixmap = QtGui.QPixmap("image.png")
         pixmap = pixmap.scaled(512,512)
         self.ui.label_3.setPixmap(pixmap)
