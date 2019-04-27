@@ -377,23 +377,33 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         vector= np.matrix ([0,0,1])  
 
         self.signal = [[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
+        self.RecoverySignal60 = [[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
+        self.RecoverySignalNegative60 = [[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
+
         angle60 = True
 
         for i in range(self.size):
             for j in range(self.size):
-                self.signal[i][j] =  self.rotationAroundYaxisMatrix(30,vector)
+                self.signal[i][j] =  self.rotationAroundYaxisMatrix((self.f/2),vector)
                 self.signal[i][j] = self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
                 self.signal[i][j] = self.recoveryDecayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.tr)
-
-
+                
+                self.RecoverySignal60[i][j] = self.rotationAroundYaxisMatrix(-self.f, vector) #Trial
+                self.RecoverySignal60[i][j] = self.recoveryDecayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.RecoverySignal60[i][j]), self.tr)
+                self.RecoverySignal60[i][j] = [[0,0,np.ravel(self.RecoverySignal60[i][j])[2]]]
+                   
+                self.RecoverySignalNegative60[i][j] = self.rotationAroundYaxisMatrix(self.f, vector) #Trial
+                self.RecoverySignalNegative60[i][j] = self.recoveryDecayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.RecoverySignalNegative60[i][j]), self.tr)
+                self.RecoverySignalNegative60[i][j] = [[0,0,np.ravel(self.RecoverySignalNegative60[i][j])[2]]]
+        
         for Ki in range(self.Kspace.shape[0]):
             print('Ki: ',Ki)
             #move in each image pixel            
             if angle60 :
-                theta = -60
+                theta = -self.f
             else:
-                theta = 60
-
+                theta = self.f
+                
             for i in range(self.size):
                     for j in range(self.size):
                         self.signal[i][j] =  self.rotationAroundYaxisMatrix(theta,np.matrix(self.signal[i][j]))
@@ -411,13 +421,12 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                         z = abs(complex(np.ravel(self.signal[i][j])[0],np.ravel(self.signal[i][j])[1]))
                         self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
             
-            for i in range(self.size):
-                for j in range(self.size):
-                    self.signal[i][j] = self.rotationAroundYaxisMatrix(theta, vector) #Trial
-                    self.signal[i][j] = self.recoveryDecayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]), self.tr)
-                    self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-
+            if angle60:
+                self.signal = copy.deepcopy(self.RecoverySignal60)
+            else:
+                self.signal = copy.deepcopy(self.RecoverySignalNegative60)
             angle60 = not angle60
+
         self.ReconstructionImageAndKspace()
     
     def GREForLoops(self): 
