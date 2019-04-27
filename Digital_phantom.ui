@@ -44,7 +44,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -209,7 +209,7 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>search-512.png</normaloff>search-512.png</iconset>
+           <normaloff>../MRIsimulation/shefaa/search-512.png</normaloff>../MRIsimulation/shefaa/search-512.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -242,7 +242,7 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>img_172965.png</normaloff>img_172965.png</iconset>
+           <normaloff>../MRIsimulation/shefaa/img_172965.png</normaloff>../MRIsimulation/shefaa/img_172965.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -353,7 +353,7 @@
        </spacer>
       </item>
       <item row="0" column="1">
-       <widget class="QGraphicsView" name="T1">
+       <widget class="PlotWidget" name="T1">
         <property name="styleSheet">
          <string notr="true">background-color: rgb(0, 0, 0);</string>
         </property>
@@ -373,7 +373,7 @@
        </spacer>
       </item>
       <item row="0" column="3">
-       <widget class="QGraphicsView" name="T2">
+       <widget class="PlotWidget" name="T2">
         <property name="styleSheet">
          <string notr="true">background-color: rgb(0, 0, 0);</string>
         </property>
@@ -665,6 +665,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">pyqtgraph</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
