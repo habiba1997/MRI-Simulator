@@ -137,6 +137,9 @@ class Ui_MainWindow(object):
         self.radioButton.setFont(font)
         self.radioButton.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         self.radioButton.setObjectName("radioButton")
+        self.buttonGroup = QtWidgets.QButtonGroup(MainWindow)
+        self.buttonGroup.setObjectName("buttonGroup")
+        self.buttonGroup.addButton(self.radioButton)
         self.verticalLayout_5.addWidget(self.radioButton)
         self.radioButton_2 = QtWidgets.QRadioButton(self.widget2)
         font = QtGui.QFont()
@@ -145,6 +148,7 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.radioButton_2.setFont(font)
         self.radioButton_2.setObjectName("radioButton_2")
+        self.buttonGroup.addButton(self.radioButton_2)
         self.verticalLayout_5.addWidget(self.radioButton_2)
         self.radioButton_3 = QtWidgets.QRadioButton(self.widget2)
         font = QtGui.QFont()
@@ -153,6 +157,7 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.radioButton_3.setFont(font)
         self.radioButton_3.setObjectName("radioButton_3")
+        self.buttonGroup.addButton(self.radioButton_3)
         self.verticalLayout_5.addWidget(self.radioButton_3)
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
@@ -184,6 +189,7 @@ class Ui_MainWindow(object):
         self.time_span.setFont(font)
         self.time_span.setStyleSheet("background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)")
         self.time_span.setMaximum(2000)
+        self.time_span.setProperty("value", 1000)
         self.time_span.setObjectName("time_span")
         self.gridLayout_3.addWidget(self.time_span, 2, 1, 1, 1)
         self.tabWidget.addTab(self.tab_2, "")
@@ -319,7 +325,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuShepp_Logan_phantom_and_features.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

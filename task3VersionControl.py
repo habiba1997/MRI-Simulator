@@ -1,5 +1,6 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import copy
 from PyQt5.QtWidgets import QFileDialog ,QApplication, QProgressBar , QComboBox , QMessageBox, QAction, QLineEdit
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import pyqtSlot
@@ -14,6 +15,7 @@ from PIL.ImageQt import ImageQt
 from PIL import Image, ImageEnhance
 import PIL
 from qimage2ndarray import gray2qimage
+from imageio import imsave, imread
 m=0
 class ApplicationWindow (QtWidgets.QMainWindow):
     @pyqtSlot()        
@@ -32,6 +34,8 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.ui.pushButton.clicked.connect (self.create)
         self.ui.pushButton_3.clicked.connect (self.Start)
         self.ui.horizontalSlider.valueChanged.connect(self.slider)
+        self.plotWindow = self.ui.T1
+        self.plotWindow2 = self.ui.T2
         
         
     
@@ -45,7 +49,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             print (self.scale)
             self.img= ImageQt(image)
             self.img.save("2.png")
-            self.ui.label.setPixmap(QPixmap.fromImage(self.img))
+            self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
             self.K_space=np.empty([self.size,self.size] , dtype= complex)
             self.empty_matrix=np.asarray(np.load(fileName),dtype=np.uint8)
@@ -75,7 +79,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                         self.t2[i,j]=200
                    else:
                         break 
-            self.T1_img=  gray2qimage(self.t1)
+            self.T1_img= gray2qimage(self.t1)
             self.T2_img= gray2qimage(self.t2)
             self.PD_img= gray2qimage(self.scale)
             
@@ -189,20 +193,20 @@ class ApplicationWindow (QtWidgets.QMainWindow):
            type=text
            if type=='T1':
               self.ui.label.clear()
-              self.ui.label.setPixmap(QPixmap.fromImage(self.T1_img))
+              self.ui.label.setPixmap(QPixmap.fromImage(self.T1_img).scaled(512,512))
            if type=='T2':
               self.ui.label.clear()
-              self.ui.label.setPixmap(QPixmap.fromImage(self.T2_img))
+              self.ui.label.setPixmap(QPixmap.fromImage(self.T2_img).scaled(512,512))
            if type=='PD':
               self.ui.label.clear()
-              self.ui.label.setPixmap(QPixmap.fromImage(self.PD_img))
+              self.ui.label.setPixmap(QPixmap.fromImage(self.PD_img).scaled(512,512))
     def slider(self):
         self.img2=PIL.Image.open("2.png")
         b=self.ui.horizontalSlider.value()
         print(b)
         enhancer = ImageEnhance.Brightness(self.img2).enhance(b/10)
         enhancer.save("out.png")
-        self.ui.label.setPixmap(QPixmap("out.png")) 
+        self.ui.label.setPixmap(QPixmap("out.png").scaled(512,512)) 
     
     def getpos (self , event):
          self.x=math.floor((event.pos().x()*self.size)/self.ui.label.frameGeometry().width())
@@ -215,35 +219,35 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             frame=cv2.rectangle(self.scale , (self.x,self.y),(self.x+3,self.y+3),(0,255,0), 1)
             image=Image.fromarray(frame)
             self.img= ImageQt(image)
-            self.ui.label.setPixmap(QPixmap.fromImage(self.img))
+            self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
          elif self.count1==2:
             self.ui.label.clear
             frame=cv2.rectangle(self.scale , (self.x,self.y),(self.x+3,self.y+3),(0,0,255), 1)
             image=Image.fromarray(frame)
             self.img= ImageQt(image)
-            self.ui.label.setPixmap(QPixmap.fromImage(self.img))
+            self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
          elif self.count1==3:
             self.ui.label.clear
             frame=cv2.rectangle(self.scale , (self.x,self.y),(self.x+3,self.y+3),(255,0,0), 1)
             image=Image.fromarray(frame)
             self.img= ImageQt(image)
-            self.ui.label.setPixmap(QPixmap.fromImage(self.img))
+            self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
          elif self.count1==4:
             self.ui.label.clear
             frame=cv2.rectangle(self.scale , (self.x,self.y),(self.x+3,self.y+3),(100,255,0), 1)
             image=Image.fromarray(frame)
             self.img= ImageQt(image)
-            self.ui.label.setPixmap(QPixmap.fromImage(self.img))
+            self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
          elif self.count1==5:
             self.ui.label.clear
             frame=cv2.rectangle(self.scale , (self.x,self.y),(self.x+3,self.y+3),(0,100,100), 1)
             image=Image.fromarray(frame)
             self.img= ImageQt(image)
-            self.ui.label.setPixmap(QPixmap.fromImage(self.img))
+            self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
             self.count1=0
          else :
@@ -257,8 +261,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         #global self.count
         #global self.plotWindow 
         #global self.plotWindow2 
-        self.plotWindow = self.ui.T1
-        self.plotWindow2 = self.ui.T2
         for t in range (self.T):
             self.Mz=(1-np.exp(-t/self.t1[self.x,self.y]))
             Rx=np.array([[1, 0, 0] ,[0, (np.cos(fa)), (np.sin(fa))], [0 ,(-np.sin(fa)) ,(np.cos(fa))]])
@@ -292,8 +294,41 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.TE() 
         self.TR()  
             
-            
-            
+                    
+
+    def rotationAroundYaxisMatrix(self,theta,vector):
+            vector = vector.transpose()
+            theta = (math.pi / 180) * theta
+            R = np.matrix ([[np.cos(theta), 0, np.sin(theta)], [0, 1, 0], [-np.sin(theta), 0, np.cos(theta)]] )
+            R = np.dot(R, vector)
+            R = R.transpose()
+            return np.matrix(R)
+
+
+    def rotationAroundZaxisMatrixXY(self,TR,speed,vector,time): #time = self.time
+            vector = vector.transpose()
+            theta = speed * (time/ TR)
+            theta = (math.pi / 180) * theta
+            XY = np.matrix([[np.cos(theta),-np.sin(theta),0], [np.sin(theta), np.cos(theta),0],[0, 0, 1]])
+            XY = np.dot(XY,vector)
+            XY = XY.transpose()
+            return np.matrix(XY) 
+
+
+    def recoveryDecayEquation(self,T1,T2,PD,vector,time):
+            vector = vector.transpose()
+            Decay =np.matrix([[np.exp(-time/T2),0,0],[0,np.exp(-time/T2),0],[0,0,np.exp(-time/T1)]])
+            Decay = np.dot(Decay,vector)
+        
+            Rec= np.dot(np.matrix([[0,0,(1-(np.exp(-time/T1)))]]),PD)
+            Rec = Rec.transpose()
+            Decay = np.matrix(Decay)
+            Rec =  np.matrix(Rec)    
+        
+            RD  = Decay + Rec
+            RD = RD.transpose()
+            return RD
+
     def TR(self):
         #global self.tr 
         #global self.plotWindow 
@@ -312,6 +347,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         
     def FA(self):
         self.f=self.ui.FA.value()
+        #self.f=(np.pi)*self.f/180
         print( self.f)
         
     def Time_span(self):
@@ -319,61 +355,74 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         print(self.T)
         
     def Start(self): 
-      K=1j
-      self.TE() 
-      self.TR()
-      self.FA() 
-      fa=(np.pi)*self.f/180
-      rx=np.array([[1, 0, 0] ,[0, np.cos(fa), (np.sin(fa))], [0 ,(-np.sin(fa)) ,(np.cos(fa))]]) 
-      rotate_by_FA=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
-      result=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
-      empty1=  gray2qimage(self.empty_matrix)
-      self.ui.label_2.setPixmap(QPixmap.fromImage(empty1))
-      print("start")
-      for self.K_space_Row in range(self.size):
-          for i in range (self.size):
-             for j in range (self.size):
-                mat1=np.matmul(rx,self.signal[i][j]) #rotate by flip angle around X
-                rotate_by_FA[i][j]=mat1
-          for i in range (self.size):
-             for j in range (self.size):
-                 Decay_Matrix=np.array([[np.exp(-self.te/self.t2[i,j]), 0, 0], [0, np.exp(-self.te/self.t2[i,j]),0],[0 ,0 ,np.exp(-self.te/self.t1[i,j])]])
-                 mat2=np.matmul(Decay_Matrix,rotate_by_FA[i][j])
-                 result[i][j]=mat2
-          for self.K_space_column in range(self.size):
-              Gx_Step=(2*np.pi/self.size)*self.K_space_Row
-              Gy_Step=(2*np.pi/self.size)*self.K_space_column
-              for i in range (self.size):
-                 for j in range (self.size):
-                    theta = Gx_Step * i + Gy_Step * j
-                    self.K_space[-self.K_space_Row,-self.K_space_column]+=(math.sqrt((result[i][j][0])*(result[i][j][0])+(result[i][j][1])*(result[i][j][1])))*(np.exp(K*theta))
-              self.empty_matrix[self.K_space_Row][self.K_space_column]=self.K_space[-self.K_space_Row,-self.K_space_column]
-              self.img2=np.asarray(abs(self.empty_matrix),dtype=np.uint8)
-              image2=Image.fromarray(self.img2)
-              Result2= ImageQt(image2)
-              '''
-              self.ui.label_2.setPixmap(QPixmap.fromImage(Result2))
-              self.ui.label_2.setAlignment(QtCore.Qt.AlignCenter)
-              QApplication.processEvents()
-              time.sleep(0.2)
-              '''
-          for i in range (self.size):
-             for j in range (self.size):
-               result[i][j][0]=0
-               result[i][j][1]=0 
-               result[i][j][2]= 1-np.exp(-self.tr/self.t1[i,j]) 
-      self.ui.label_2.setPixmap(QPixmap.fromImage(Result2))
-      self.ui.label_2.setAlignment(QtCore.Qt.AlignCenter)
-      QApplication.processEvents()
-      recon= np.fft.ifft2(self.K_space).real
-      print (recon)
-      ans=recon*1000
-      self.img3=np.asarray(ans,dtype=np.uint8)
-      print(self.img3)
-      image3=Image.fromarray(self.img3)
-      Result3= ImageQt(image3)
-      self.ui.label_3.setPixmap(QPixmap.fromImage(Result3))
-      self.ui.label_3.setAlignment(QtCore.Qt.AlignCenter) 
+        self.TE() 
+        self.TR()
+        self.FA() 
+        self.Kspace =  np.zeros((self.size,self.size),dtype=np.complex_)
+        #self.KspaceSave = abs(copy.deepcopy(Kspace))
+        self.fileName5 = "Kspace.png"
+        self.ForLoops()
+    
+    
+    def ForLoops(self): 
+        vector= np.matrix ([0,0,1])  
+        self.signal=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
+        self.recoverySignal=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
+        
+        for i in range(self.size):
+            for j in range(self.size):
+                    self.signal[i][j][2]=1
+                    self.recoverySignal[i][j] = self.rotationAroundYaxisMatrix(self.f,vector) 
+                    self.recoverySignal[i][j] = self.recoveryDecayEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.recoverySignal[i][j]),self.tr)
+                    self.recoverySignal[i][j] = [[0,0,np.ravel(self.recoverySignal[i][j])[2]]]
+        
+        #print(self.signal)
+        #start = True
+
+        for Ki in range(self.Kspace.shape[0]):
+            print('Ki: ',Ki)
+            #move in each image pixel            
+
+            for i in range(self.size):
+                for j in range(self.size):
+                        self.signal[i][j] =  self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j]))
+                        self.signal[i][j] =  self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
+
+            # for kspace column
+            for Kj in range (self.Kspace.shape[1]):
+                print('Kj: ',Kj)
+                GxStep = ((2 * math.pi) / self.Kspace.shape[0]) * Kj
+                GyStep = ((2 * math.pi) /self.Kspace.shape[1]) * Ki
+                
+                
+                for i in range(self.size):
+                    for j in range(self.size):
+                        totalTheta = (GxStep*j)+ (GyStep*i)
+                        z = abs(complex(np.ravel(self.signal[i][j])[0],np.ravel(self.signal[i][j])[1]))
+                        self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
+
+            self.signal = copy.deepcopy(self.recoverySignal)
+            
+            #start = False
+
+            
+        print("DONE")
+        KspaceSave =abs(copy.deepcopy(self.Kspace))
+        print(self.Kspace)
+        imsave('kspace.png', KspaceSave)
+        print("DONE1")
+        self.ui.label_2.setPixmap(QtGui.QPixmap('kspace.png').scaled(512,512))
+        print("DONE2")
+        Kspacefft = np.fft.fft2(self.Kspace)
+        #Kspaceifft = np.fft.ifft2(self.Kspace)
+        print("DONE3")
+        Kspacefft = abs(Kspacefft)
+        imsave("image.png", Kspacefft)
+        print("DONE4")
+        pixmap = QtGui.QPixmap("image.png")
+        pixmap = pixmap.scaled(512,512)
+        self.ui.label_3.setPixmap(pixmap)
+
             
 def main():
     app = QtWidgets.QApplication(sys.argv)
