@@ -117,21 +117,16 @@ class ApplicationWindow (QtWidgets.QMainWindow):
              QMessageBox.about(self, "Error", "you should choose the size and shape of the phantom first.")
         else :
             print ("create done ")
-        if self.phantom_type==1 and self.n==128:
-            self.n = 32
-            self.img2 = np.zeros((32,32), np.uint8)
-            elipse4=img = phantom(n=32) 
+        if self.phantom_type==1 and self.n==32:
+            elipse4=(phantom(n=32))*1000
             elipse4.dump("shepplogan(32).dat")
             QMessageBox.about(self, "Done", "phantom 'shepplogan(32)'  created and saved ")
         elif self.phantom_type==1 and self.n==256:
-            self.n = 64
-            self.img2 = np.zeros((64,64), np.uint8)
-            elipse4=img = phantom(n=64) 
+            elipse4=(phantom(n=64))*1000
             elipse4.dump("shepplogan(64).dat")
             QMessageBox.about(self, "Done", "phantom 'shepplogan(64)'  created and saved ")
         elif self.phantom_type==1 and self.n==512:
-            self.img2 = np.zeros((512,512), np.uint8)
-            elipse4=img = phantom(n=512) 
+            elipse4= phantom(n=512) *1000 
             elipse4.dump("shepplogan(512).dat")
             QMessageBox.about(self, "Done", "phantom 'shepplogan(512)'  created and saved ")    
         elif self.phantom_type==2 and self.n==128:
@@ -140,6 +135,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             reactangle2=cv2.rectangle(reactangle1,(62,87),(100,50),(32,32,32),-3)
             reactangle3=cv2.rectangle(reactangle2,(12,75),(50,45),(26,26,26),-3)
             phantom1=cv2.rectangle(reactangle3,(42,55),(72,30),(128,128,128),-3)
+            print(type(phantom1))
             phantom1.dump("squares(128).dat")
             QMessageBox.about(self, "Done", "phantom 'squares(128)'  created and saved ")
         elif self.phantom_type==2 and self.n==256:
@@ -149,6 +145,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             reactangle3=cv2.rectangle(reactangle2,(25,150),(100,90),(105,105,105),-3)
             phantom1=cv2.rectangle(reactangle3,(80,100),(290,120),(255,255,255),-3)
             phantom1.dump("squares(256).dat")
+            print(type(phantom1))
             QMessageBox.about(self, "Done", "phantom 'squares(256)'  created and saved ")
         elif self.phantom_type==2 and self.n==512:
             self.img1 = np.zeros((512,512), np.uint8)
@@ -157,15 +154,15 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             reactangle3=cv2.rectangle(reactangle2,(50,300),(200,180),(105,105,105),-3)
             phantom1=cv2.rectangle(reactangle3,(170,220),(290,120),(255,255,255),-3)
             phantom1.dump("squares(512).dat")
+            print(type(phantom1))
             QMessageBox.about(self, "Done", "phantom 'squares(512)'  created and saved ")
-            
         elif self.phantom_type==3 and self.n==128:
             self.img = np.zeros((128,128), np.uint8)
             line1=cv2.line(self.img,(100,0),(100,128),(255, 255, 255),15)
             line2=cv2.line(self.img,(0,100),(128,100),(200, 200, 200),30)
             circle= cv2.circle(self.img,(64,64), 30, (169,169,169),-1)
             ellipse=cv2.ellipse(self.img,(50,25),(30, 15),0,0,360,(255, 255, 255),-1)
-
+            print(type(self.img))
             self.img.dump("circles(128).dat")
             QMessageBox.about(self, "Done", "phantom 'circles(128)'  created and saved ")
         elif self.phantom_type==3 and self.n==256:
@@ -174,16 +171,16 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             line2=cv2.line(self.img,(0,200),(256,200),(200, 200, 200),30)
             circle= cv2.circle(self.img,(128,128), 60, (169,169,169),-1)
             ellipse=cv2.ellipse(self.img,(100,50),(60,30),0,0,360,(255, 255, 255),-1)
-
+            print(type(self.img))
             self.img.dump("circles(256).dat")
             QMessageBox.about(self, "Done", "phantom 'circles(256)'  created and saved ")
-        elif self.phantom_type==3 and n==512:
+        elif self.phantom_type==3 and self.n==512:
             self.img = np.zeros((512,512), np.uint8)
             line1=cv2.line(self.img,(400,0),(400,512),(255, 255, 255),15)
             line2=cv2.line(self.img,(0,400),(512,400),(200, 200, 200),30)
             circle= cv2.circle(self.img,(256,256), 120, (169,169,169),-1)
             ellipse=cv2.ellipse(self.img,(200,100),(120,60),0,0,360,(255, 255, 255),-1)
-
+            print(type(self.img))
             self.img.dump("circles(512).dat")
             QMessageBox.about(self, "Done", "phantom 'circles(512)'  created and saved ")
      
@@ -353,7 +350,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         preb = self.ui.buttonGroup_2.checkedId()
         if (preb==-2):
             print("null tissue")
-             self.nullTissue=self.ui.NullTissue.value()
+            self.nullTissue=self.ui.NullTissue.value()
             t = self.nullTissue * np.log(2)
             for i in range(self.size):
                     for j in range(self.size):
@@ -381,7 +378,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.signal = [[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
         vector= np.matrix ([0,0,1])  
         start = True
-        
        
         for loop in range(self.StartUpCycle):
                 if start:
@@ -425,11 +421,12 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         for i in range(self.size):
             for j in range(self.size):
                 self.signal[i][j] =  self.rotationAroundYaxisMatrix((self.f/2),np.matrix(self.signal[i][j]))
-                self.signal[i][j] = self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
+                self.signal[i][j][0]  = self.signal[i][j][0] * np.exp(-self.te/self.t2[i][j])
+                self.signal[i][j][1]  = self.signal[i][j][1] * np.exp(-self.te/self.t2[i][j])
                 self.signal[i][j] = self.recoveryDecayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.tr)
             
         for Ki in range(self.Kspace.shape[0]):
-            #print('Ki: ',Ki)
+            print('Ki: ',Ki)
             #move in each image pixel            
             if angle60 :
                 theta = -self.f
@@ -439,11 +436,12 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             for i in range(self.size):
                     for j in range(self.size):
                         self.signal[i][j] =  self.rotationAroundYaxisMatrix(theta,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] =  self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
+                        self.signal[i][j][0]  = self.signal[i][j][0] * np.exp(-self.te/self.t2[i][j])
+                        self.signal[i][j][1]  = self.signal[i][j][1] * np.exp(-self.te/self.t2[i][j])
 
             # for kspace column
             for Kj in range ( self.Kspace.shape[1]):
-                 #print('Kj: ',Kj)
+                print('Kj: ',Kj)
                 GxStep = ((2 * math.pi) /  self.Kspace.shape[0]) * Kj
                 GyStep = ((2 * math.pi) / self.Kspace.shape[1]) * Ki            
                 
@@ -467,17 +465,18 @@ class ApplicationWindow (QtWidgets.QMainWindow):
     def GREForLoops(self): 
 
         for Ki in range(self.Kspace.shape[0]):
-            #print('Ki: ',Ki)
+            print('Ki: ',Ki)
             #move in each image pixel            
 
             for i in range(self.size):
                 for j in range(self.size):
                         self.signal[i][j] =  self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] =  self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
+                        self.signal[i][j][0]  = self.signal[i][j][0] * np.exp(-self.te/self.t2[i][j])
+                        self.signal[i][j][1]  = self.signal[i][j][1] * np.exp(-self.te/self.t2[i][j])
 
             # for kspace column
             for Kj in range (self.Kspace.shape[1]):
-                 #print('Kj: ',Kj)
+                print('Kj: ',Kj)
                 GxStep = ((2 * math.pi) / self.Kspace.shape[0]) * Kj
                 GyStep = ((2 * math.pi) /self.Kspace.shape[1]) * Ki
                 
