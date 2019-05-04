@@ -316,7 +316,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
 
     def recoveryEquation(self,T1,T2,PD,vector,time):
             vector = vector.transpose()
-            Decay =np.matrix([[1,0,0],[0,1,0],[0,0,np.exp(-time/T1)]])
+            Decay =np.matrix([[np.exp(-time/T2),0,0],[0,np.exp(-time/T2),0],[0,0,np.exp(-time/T1)]])
             Decay = np.dot(Decay,vector)
         
             Rec= np.dot(np.matrix([[0,0,(1-(np.exp(-time/T1)))]]),PD)
@@ -327,13 +327,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             RD  = Decay + Rec
             RD = RD.transpose()
             return RD
-    
-    def decayEquation(self,T1,T2,PD,vector,time):
-            vector = vector.transpose()
-            Decay =np.matrix([[np.exp(-time/T2),0,0],[0,np.exp(-time/T2),0],[0,0,1]])
-            Decay = np.dot(Decay,vector)
-            Decay = np.transpose(np.matrix(Decay))
-            return Decay
 
     def TR(self):    
         self.tr=self.ui.TR.value()
@@ -428,7 +421,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         for i in range(self.size):
             for j in range(self.size):
                 self.signal[i][j] =  self.rotationAroundYaxisMatrix((self.f/2),np.matrix(self.signal[i][j]))
-                self.signal[i][j] = self.decayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.te)
                 self.signal[i][j] = self.recoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.tr)
             
         for Ki in range(self.Kspace.shape[0]):
@@ -442,7 +434,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             for i in range(self.size):
                     for j in range(self.size):
                         self.signal[i][j] =  self.rotationAroundYaxisMatrix(theta,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.decayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.te)
+                        self.signal[i][j] = self.recoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.te)
 
 
             # for kspace column
@@ -461,7 +453,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                 for j in range(self.size):
                     #self.signal[i][j][2]=1
                     #self.recoverySignal[i][j] = self.rotationAroundYaxisMatrix(self.f,vector) 
-                    self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.tr)
+                    self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr-self.te))
                     self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
 
             angle60 = not angle60
@@ -477,7 +469,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             for i in range(self.size):
                 for j in range(self.size):
                         self.signal[i][j] =  self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.decayEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.te)
+                        self.signal[i][j] = self.recoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.te)
 
             # for kspace column
             for Kj in range (self.Kspace.shape[1]):
@@ -496,7 +488,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                 for j in range(self.size):
                     #self.signal[i][j][2]=1
                     #self.recoverySignal[i][j] = self.rotationAroundYaxisMatrix(self.f,vector) 
-                    self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.tr)
+                    self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr-self.te))
                     self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
             #self.signal = copy.deepcopy(self.recoverySignal)
         
