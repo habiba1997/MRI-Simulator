@@ -27,22 +27,21 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.count=0
         self.count1=0
         self.n=0
+        
         super(ApplicationWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.browse.clicked.connect (self.browse)
-        self.ui.property.currentTextChanged.connect(self.Property)
         self.ui.label.mousePressEvent =self.getpos
         self.ui.PhantomShape.currentTextChanged.connect(self.shape)
         self.ui.PhantomSize.currentTextChanged.connect(self.phantom_size)
         self.ui.createPhantom.clicked.connect (self.create)
+        self.ui.ernstAngle.clicked.connect (self.ernstAngleFun)
         self.ui.start.clicked.connect (self.Start)
         self.ui.horizontalSlider.valueChanged.connect(self.slider)
         self.plotWindow = self.ui.T1
         self.plotWindow2 = self.ui.T2
-        
-        
-    
+
     def browse(self):
         fileName,_Filter = QtWidgets.QFileDialog.getOpenFileName(None, "Select phantom","","self.data Files(*.dat)")
         if fileName:
@@ -50,7 +49,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             self.size=len(self.data)
             self.scale=np.asarray(self.data,dtype=np.uint8)
             image=Image.fromarray(self.scale)
-            print (self.scale)
+            #print (self.scale)
             self.img= ImageQt(image)
             self.img.save("2.png")
             self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
@@ -66,12 +65,13 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                    self.signal[i][j][2]=1
                    self.empty_matrix[i][j]=255
                    self.K_space[i,j]=0
+                   
                    if self.scale[i][j]>=0 and self.scale[i][j]<=50 :
-                       self.t1[i][j]=1000
-                       self.t2[i][j]=50
+                        self.t1[i][j]=10
+                        self.t2[i][j]=50
                    elif self.scale[i][j]<=100 and self.scale[i][j] >=50:
-                       self.t1[i][j]=1200
-                       self.t2[i][j]=120
+                        self.t1[i][j]=1200
+                        self.t2[i][j]=120
                    elif self.scale[i][j] <=150 and self.scale[i][j] >=100 :
                         self.t1[i,j]=1300
                         self.t2[i,j]=150
@@ -82,17 +82,31 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                         self.t1[i,j]=2000
                         self.t2[i,j]=200
                    else:
-                        break 
+                        break
+
+
+            self.t1 = self.mappingToIntensity(self.t1)
+            self.t2 = self.mappingToIntensity(self.t2)
+
             self.T1_img= gray2qimage(self.t1)
             self.T2_img= gray2qimage(self.t2)
             self.PD_img= gray2qimage(self.scale)
-            """    myT2Range =  np.array([min(self.t2), max(self.t2)+25])
-            intensity = np.array([0, 255])
-            self.t2 = np.interp(self.t2,myT2Range,intensity)
-            myT1Range =  np.array([min(self.t1), max(self.t1)+20])
-            intensity = np.array([0, 255])
-            self.t1 = np.interp(self.t1,myT1Range,intensity)"""
-            
+
+            self.ui.plainTextEdit.clear()
+            self.ui.plainTextEdit.appendPlainText(str(np.unique(self.t1)))
+            self.ui.plainTextEdit.appendPlainText(str(np.unique(self.t2)))
+
+            self.ui.labelT1.clear()
+            self.ui.labelT1.setPixmap(QPixmap.fromImage(self.T1_img).scaled(512,512))
+            self.ui.LabelT2.clear()
+            self.ui.LabelT2.setPixmap(QPixmap.fromImage(self.T2_img).scaled(512,512))
+
+    def mappingToIntensity(self,array):
+        maxx = np.max(array)
+        minn = np.min(array) 
+        array = (((255-2)/(maxx-minn))*(array-minn+2))
+        return array
+
     def phantom_size(self, text):
         print(text)
         self.n=int(text) 
@@ -112,7 +126,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
     
     
     def create(self):
-
         if self.n==0 or self.phantom_type==0 :
              QMessageBox.about(self, "Error", "you should choose the size and shape of the phantom first.")
         else :
@@ -121,8 +134,12 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             elipse4=(phantom(n=32))*1000
             elipse4.dump("shepplogan(32).dat")
             QMessageBox.about(self, "Done", "phantom 'shepplogan(32)'  created and saved ")
-        elif self.phantom_type==1 and self.n==256:
-            elipse4=(phantom(n=64))*1000
+        elif self.phantom_type==1 and self.n==9:
+            elipse4=(phantom(n=9))*1000
+            elipse4.dump("shepplogan(9).dat")
+            QMessageBox.about(self, "Done", "phantom 'shepplogan(9)'  created and saved ")
+        elif self.phantom_type==1 and self.n==64:
+            elipse4=(phantom(n=20))*1000
             elipse4.dump("shepplogan(64).dat")
             QMessageBox.about(self, "Done", "phantom 'shepplogan(64)'  created and saved ")
         elif self.phantom_type==1 and self.n==512:
@@ -183,22 +200,8 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             print(type(self.img))
             self.img.dump("circles(512).dat")
             QMessageBox.about(self, "Done", "phantom 'circles(512)'  created and saved ")
-     
-    
 
-            
-    def Property(self, text):
-           print("start")
-           type=text
-           if type=='T1':
-              self.ui.label.clear()
-              self.ui.label.setPixmap(QPixmap.fromImage(self.T1_img).scaled(512,512))
-           if type=='T2':
-              self.ui.label.clear()
-              self.ui.label.setPixmap(QPixmap.fromImage(self.T2_img).scaled(512,512))
-           if type=='PD':
-              self.ui.label.clear()
-              self.ui.label.setPixmap(QPixmap.fromImage(self.PD_img).scaled(512,512))
+
     def slider(self):
         self.img2=PIL.Image.open("2.png")
         b=self.ui.horizontalSlider.value()
@@ -293,7 +296,26 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.TE() 
         self.TR()  
             
-                    
+    def ernstAngleFun(self):
+            self.TR()
+            vector= np.dot (130,np.matrix ([0,0,1])) 
+            step = 5
+            intensity = np.zeros(int(180/step))
+            j =0
+            for theta in range ( 0, 180 , step ):
+                for i in range(10):
+                    vector = self.rotationAroundYaxisMatrix(theta,vector)
+                    vector = self.DecayRecoveryEquation(2600,50,1,vector,self.tr)
+                
+                x = np.ravel(vector)[0]
+                y = np.ravel(vector)[1]
+                intensity[j] = math.sqrt((x*x)+(y*y))
+                j+=1        
+            array = np.arange(0,180,step)
+            plt.plot(array,intensity)
+            plt.show()
+            #QMessageBox.about(self, "Error", "you should choose the sequence first")
+             
 
     def rotationAroundYaxisMatrix(self,theta,vector):
             vector = vector.transpose()
@@ -302,7 +324,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             R = np.dot(R, vector)
             R = R.transpose()
             return np.matrix(R)
-
 
     def rotationAroundZaxisMatrixXY(self,TR,speed,vector,time): #time = self.time
             vector = vector.transpose()
@@ -314,7 +335,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             return np.matrix(XY) 
 
 
-    def recoveryEquation(self,T1,T2,PD,vector,time):
+    def DecayRecoveryEquation(self,T1,T2,PD,vector,time):
             vector = vector.transpose()
             Decay =np.matrix([[np.exp(-time/T2),0,0],[0,np.exp(-time/T2),0],[0,0,np.exp(-time/T1)]])
             Decay = np.dot(Decay,vector)
@@ -330,7 +351,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
 
     def TR(self):    
         self.tr=self.ui.TR.value()
-        print(self.tr)
 
         
     def TE(self):
@@ -339,7 +359,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         
     def FA(self):
         self.f=self.ui.FA.value()
-        print( self.f)
         
     def Time_span(self):
         self.T=self.ui.time_span.value()
@@ -349,68 +368,60 @@ class ApplicationWindow (QtWidgets.QMainWindow):
     def Prepration(self):
         preb = self.ui.buttonGroup_2.checkedId()
         if (preb==-2):
-            print("null tissue")
             self.nullTissue=self.ui.NullTissue.value()
             t = self.nullTissue * np.log(2)
             for i in range(self.size):
                     for j in range(self.size):
                         self.signal[i][j] = self.rotationAroundYaxisMatrix(180,np.matrix(self.signal[i][j])) 
-                        self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),t)
-                        #self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
+                        self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),t)
+                        self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
+        
         elif (preb==-3):
-            print("t2 preb")
             self.T2prebtime=self.ui.T2prebTime.value()
             for i in range(self.size):
                     for j in range(self.size):
                         self.signal[i][j] = self.rotationAroundYaxisMatrix(90,np.matrix(self.signal[i][j])) 
-                        self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.T2prebtime)
-                        #self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
+                        self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.T2prebtime)
+                        self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
                         self.signal[i][j] = self.rotationAroundYaxisMatrix(-90,np.matrix(self.signal[i][j])) 
         elif (preb==-4):
             print("nrg3 normal tany")
+        
+        
         else:
             QMessageBox.about(self, "Error", "you should choose the Preperation sequence first")
 
 
     def startUpCycle(self):
         self.StartUpCycle=self.ui.StartUpCycle_2.value()
-        print(self.StartUpCycle)
         self.signal = [[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
-        vector= np.matrix ([0,0,1])  
-        start = True
+        for i in range(self.size):
+                for j in range(self.size):
+                    self.signal[i][j][2] =1
        
         for loop in range(self.StartUpCycle):
-                if start:
-                    for i in range(self.size):
-                        for j in range(self.size):
-                            self.signal[i][j] = self.rotationAroundYaxisMatrix(self.f,vector) 
-                            self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.tr)
-                            self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-                else:
                     for i in range(self.size):
                         for j in range(self.size):
                             self.signal[i][j] = self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j])) 
-                            self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.tr)
+                            self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.tr)
                             self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-                start = False
+       
 
     def Start(self):
         
         Acquisition = self.ui.buttonGroup.checkedId()
         print(Acquisition)
-
         self.TE() 
         self.TR()
         self.FA() 
         self.Kspace =  np.zeros((self.size,self.size),dtype=np.complex_)
-        #self.KspaceSave = abs(copy.deepcopy(Kspace))
         self.startUpCycle()
         self.Prepration()
         if (Acquisition==-1):
             QMessageBox.about(self, "Error", "you should choose the acquisition sequence first")
-        elif (Acquisition==-4):
-            self.SSFPForLoops()
         elif (Acquisition==-2):
+            self.SSFPForLoops()
+        elif (Acquisition==-3):
             self.GREForLoops()
     
 
@@ -421,8 +432,9 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         for i in range(self.size):
             for j in range(self.size):
                 self.signal[i][j] =  self.rotationAroundYaxisMatrix((self.f/2),np.matrix(self.signal[i][j]))
-                self.signal[i][j] = self.recoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.tr)
-            
+                self.signal[i][j] =  self.DecayRecoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.tr)
+                self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
+        
         for Ki in range(self.Kspace.shape[0]):
             print('Ki: ',Ki)
             #move in each image pixel            
@@ -434,7 +446,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             for i in range(self.size):
                     for j in range(self.size):
                         self.signal[i][j] =  self.rotationAroundYaxisMatrix(theta,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.recoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.te)
+                        self.signal[i][j] = self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
 
 
             # for kspace column
@@ -451,14 +463,13 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             
             for i in range(self.size):
                 for j in range(self.size):
-                    #self.signal[i][j][2]=1
-                    #self.recoverySignal[i][j] = self.rotationAroundYaxisMatrix(self.f,vector) 
-                    self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr-self.te))
+                    self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr))
                     self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
 
             angle60 = not angle60
 
         self.ReconstructionImageAndKspace()
+    
     
     def GREForLoops(self): 
 
@@ -469,7 +480,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             for i in range(self.size):
                 for j in range(self.size):
                         self.signal[i][j] =  self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.recoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.te)
+                        self.signal[i][j] = self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
 
             # for kspace column
             for Kj in range (self.Kspace.shape[1]):
@@ -486,16 +497,14 @@ class ApplicationWindow (QtWidgets.QMainWindow):
 
             for i in range(self.size):
                 for j in range(self.size):
-                    #self.signal[i][j][2]=1
-                    #self.recoverySignal[i][j] = self.rotationAroundYaxisMatrix(self.f,vector) 
-                    self.signal[i][j] = self.recoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr-self.te))
+                    self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr))
                     self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-            #self.signal = copy.deepcopy(self.recoverySignal)
         
         self.ReconstructionImageAndKspace()
 
     
     def ReconstructionImageAndKspace(self):
+        print(self.Kspace)
         KspaceSave =abs(copy.deepcopy(self.Kspace))
         print("Done")
         imsave('kspace.png', KspaceSave)
@@ -503,7 +512,9 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         Kspacefft = np.fft.fft2(self.Kspace)
         #Kspaceifft = np.fft.ifft2(self.Kspace)
         Kspacefft = abs(Kspacefft)
+        Kspacefft = self.mappingToIntensity(np.array(np.round_(Kspacefft)))
         imsave("image.png", Kspacefft)
+
         pixmap = QtGui.QPixmap("image.png")
         pixmap = pixmap.scaled(512,512)
         self.ui.label_3.setPixmap(pixmap)
