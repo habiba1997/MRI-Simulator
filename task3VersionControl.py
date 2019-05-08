@@ -411,7 +411,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         elif (self.Prepration==0):
             print("nrg3 normal tany")
         elif (self.Prepration==3):
-            print("Tagging")
+            print("tagging")
         else:
             QMessageBox.about(self, "Error", "you should choose the Preperation sequence first")
 
