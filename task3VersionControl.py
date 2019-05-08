@@ -1,7 +1,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import copy
-from PyQt5.QtWidgets import QFileDialog ,QApplication, QProgressBar , QComboBox , QMessageBox, QAction, QLineEdit
+from PyQt5.QtWidgets import QInputDialog,QFileDialog ,QApplication, QProgressBar , QComboBox , QMessageBox, QAction, QLineEdit
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import pyqtSlot
 from Digital_phantom2 import Ui_MainWindow
@@ -34,6 +34,9 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.ui.browse.clicked.connect (self.browse)
         self.ui.label.mousePressEvent =self.getpos
         self.ui.PhantomShape.currentTextChanged.connect(self.shape)
+        self.ui.Preb.currentTextChanged.connect(self.preb)
+        self.ui.aquise.currentTextChanged.connect(self.acquisition)
+
         self.ui.PhantomSize.currentTextChanged.connect(self.phantom_size)
         self.ui.createPhantom.clicked.connect (self.create)
         self.ui.ernstAngle.clicked.connect (self.ernstAngleFun)
@@ -41,6 +44,10 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.ui.horizontalSlider.valueChanged.connect(self.slider)
         self.plotWindow = self.ui.T1
         self.plotWindow2 = self.ui.T2
+        self.Acquisition = 0
+        self.Prepration = 0
+    
+    
 
     def browse(self):
         fileName,_Filter = QtWidgets.QFileDialog.getOpenFileName(None, "Select phantom","","self.data Files(*.dat)")
@@ -54,20 +61,14 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             self.img.save("2.png")
             self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
-            self.K_space=np.empty([self.size,self.size] , dtype= complex)
-            self.empty_matrix=np.asarray(np.load(fileName),dtype=np.uint8)
             self.PD=np.asarray(np.load(fileName),dtype=np.uint8)
             self.t1=np.asarray(np.load(fileName),dtype=np.uint8)
             self.t2=np.asarray(np.load(fileName),dtype=np.uint8)
-            self.signal=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
             for i in range (self.size):
                for j in range (self.size):
-                   self.signal[i][j][2]=1
-                   self.empty_matrix[i][j]=255
-                   self.K_space[i,j]=0
                    
                    if self.scale[i][j]>=0 and self.scale[i][j]<=50 :
-                        self.t1[i][j]=10
+                        self.t1[i][j]=1
                         self.t2[i][j]=50
                    elif self.scale[i][j]<=100 and self.scale[i][j] >=50:
                         self.t1[i][j]=1200
@@ -101,6 +102,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             self.ui.LabelT2.clear()
             self.ui.LabelT2.setPixmap(QPixmap.fromImage(self.T2_img).scaled(512,512))
 
+    
     def mappingToIntensity(self,array):
         maxx = np.max(array)
         minn = np.min(array) 
@@ -138,8 +140,12 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             elipse4=(phantom(n=9))*1000
             elipse4.dump("shepplogan(9).dat")
             QMessageBox.about(self, "Done", "phantom 'shepplogan(9)'  created and saved ")
-        elif self.phantom_type==1 and self.n==64:
+        elif self.phantom_type==1 and self.n==20:
             elipse4=(phantom(n=20))*1000
+            elipse4.dump("shepplogan(20).dat")
+            QMessageBox.about(self, "Done", "phantom 'shepplogan(20)'  created and saved ")
+        elif self.phantom_type==1 and self.n==64:
+            elipse4=(phantom(n=64))*1000
             elipse4.dump("shepplogan(64).dat")
             QMessageBox.about(self, "Done", "phantom 'shepplogan(64)'  created and saved ")
         elif self.phantom_type==1 and self.n==512:
@@ -254,15 +260,13 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             self.count1=0
          else :
             print ('end')
+    
     def plot(self):
         arr1 = []
         arr2 = []
         self.FA() 
         self.Time_span()
-        fa=(np.pi)*self.f/180
-        #global self.count
-        #global self.plotWindow 
-        #global self.plotWindow2 
+        fa=(np.pi)*self.f/180 
         for t in range (self.T):
             self.Mz=(1-np.exp(-t/self.t1[self.x,self.y]))
             Rx=np.array([[1, 0, 0] ,[0, (np.cos(fa)), (np.sin(fa))], [0 ,(-np.sin(fa)) ,(np.cos(fa))]])
@@ -272,7 +276,6 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             arr1.append(self.Mz)
             arr2.append(Mxy)
 #            QtGui.QApplication.processEvents()
-#            time.sleep(0.2)
         if self.count==1 :
             self.plotWindow.clear()
             self.plotWindow2.clear()
@@ -363,12 +366,34 @@ class ApplicationWindow (QtWidgets.QMainWindow):
     def Time_span(self):
         self.T=self.ui.time_span.value()
         print(self.T)
+    
+    def acquisition (self,text):
+        
+        if text =="SSFP":
+            self.Acquisition=1
+        elif text=="SpinEcho": #squares
+            self.Acquisition=2
+        elif text=="GRE": #circles
+            self.Acquisition=3
+        else: 
+            self.Acquisition = 0
+    
+    def preb (self,text):
+        if text=="T1IR": #squares
+            self.Prepration=1
+            self.nullTissue, ok = QInputDialog.getInt(self,"integer input dialog","enter Null Tissue T1")
+            print(self.nullTissue)
+        elif text=="T2Preb": #circles
+            self.Prepration=2
+            self.T2prebtime, ok = QInputDialog.getInt(self,"integer input dialog","enter time inteval for preb")
+            print(self.T2prebtime)
+        elif text=="Tagging":
+            self.Prepration=3
+        else: 
+            self.Prepration =0 
 
-
-    def Prepration(self):
-        preb = self.ui.buttonGroup_2.checkedId()
-        if (preb==-2):
-            self.nullTissue=self.ui.NullTissue.value()
+    def prepration(self):
+        if (self.Prepration==1):
             t = self.nullTissue * np.log(2)
             for i in range(self.size):
                     for j in range(self.size):
@@ -376,21 +401,22 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                         self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),t)
                         self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
         
-        elif (preb==-3):
-            self.T2prebtime=self.ui.T2prebTime.value()
+        elif (self.Prepration==2):
             for i in range(self.size):
                     for j in range(self.size):
                         self.signal[i][j] = self.rotationAroundYaxisMatrix(90,np.matrix(self.signal[i][j])) 
                         self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),self.T2prebtime)
                         self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
                         self.signal[i][j] = self.rotationAroundYaxisMatrix(-90,np.matrix(self.signal[i][j])) 
-        elif (preb==-4):
+        elif (self.Prepration==0):
             print("nrg3 normal tany")
-        
-        
+        elif (self.Prepration==3):
+            print("Tagging")
         else:
             QMessageBox.about(self, "Error", "you should choose the Preperation sequence first")
 
+        
+      
 
     def startUpCycle(self):
         self.StartUpCycle=self.ui.StartUpCycle_2.value()
@@ -409,22 +435,52 @@ class ApplicationWindow (QtWidgets.QMainWindow):
 
     def Start(self):
         
-        Acquisition = self.ui.buttonGroup.checkedId()
-        print(Acquisition)
         self.TE() 
         self.TR()
         self.FA() 
         self.Kspace =  np.zeros((self.size,self.size),dtype=np.complex_)
         self.startUpCycle()
-        self.Prepration()
-        if (Acquisition==-1):
-            QMessageBox.about(self, "Error", "you should choose the acquisition sequence first")
-        elif (Acquisition==-2):
+        self.prepration()
+        if (self.Acquisition==1):
             self.SSFPForLoops()
-        elif (Acquisition==-3):
+        elif (self.Acquisition==2):
+            self.SpinEchoForLoops()
+        elif (self.Acquisition==3):
             self.GREForLoops()
+        else:
+            QMessageBox.about(self, "Error", "you should choose the acquisition sequence first")
     
+    def SpinEchoForLoops(self):    
 
+        for Ki in range(self.Kspace.shape[0]):
+            print('Ki: ',Ki)
+
+            for i in range(self.size):
+                    for j in range(self.size):
+                        self.signal[i][j] =  self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j]))
+                        self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.te/2))
+                        self.signal[i][j] =  self.rotationAroundYaxisMatrix((self.f*2),np.matrix(self.signal[i][j]))
+                        self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.te/2))
+
+            # for kspace column
+            for Kj in range ( self.Kspace.shape[1]):
+                print('Kj: ',Kj)
+                GxStep = ((2 * math.pi) /  self.Kspace.shape[0]) * Kj
+                GyStep = ((2 * math.pi) / self.Kspace.shape[1]) * Ki            
+                
+                for i in range(self.size):
+                    for j in range(self.size):
+                        totalTheta = (GxStep*j)+ (GyStep*i)
+                        z = abs(complex(np.ravel(self.signal[i][j])[0],np.ravel(self.signal[i][j])[1]))
+                        self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
+            
+            for i in range(self.size):
+                for j in range(self.size):
+                    self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr))
+                    self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
+
+
+        self.ReconstructionImageAndKspace()
 
     def SSFPForLoops(self):    
         angle60 = True
