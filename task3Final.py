@@ -1,7 +1,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import copy
-from PyQt5.QtWidgets import QInputDialog,QFileDialog ,QApplication, QProgressBar , QComboBox , QMessageBox, QAction, QLineEdit
+from PyQt5.QtWidgets import QInputDialog,QGraphicsView, QFileDialog ,QApplication, QProgressBar , QComboBox , QMessageBox, QAction, QLineEdit
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import pyqtSlot
 from Digital_phantom2 import Ui_MainWindow
@@ -18,6 +18,80 @@ from qimage2ndarray import gray2qimage
 from imageio import imsave, imread
 from shapeloggin import phantom 
 from matplotlib import pyplot as plt
+from  cython import SpinEchoForLoops , SSFPForLoops, GREForLoops
+
+
+class PhotoViewer(QtWidgets.QGraphicsView):
+    photoClicked = QtCore.pyqtSignal(QtCore.QPoint)
+
+    def __init__(self, parent):
+        super(PhotoViewer, self).__init__(parent)
+        self._zoom = 0
+        self._empty = True
+        self._scene = QtWidgets.QGraphicsScene(self)
+        self._photo = QtWidgets.QGraphicsPixmapItem()
+        self._scene.addItem(self._photo)
+        self.setScene(self._scene)
+        self.setFixedSize(350,350)
+        self.wheelEvent = self.zoom
+        #self.setSceneRect(0, 0, 400, 400)
+        self.wheelEvent = self.zoom
+        #self.fitInView(0,0, 400, 400, QtCore.Qt.KeepAspectRatio)
+
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        
+        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+    def hasPhoto(self):
+        return not self._empty
+
+    def fitInVieww(self, scale=True):
+        rect = QtCore.QRectF(self._photo.pixmap().rect())
+        if not rect.isNull():
+            self.setSceneRect(rect)
+            if self.hasPhoto():
+                viewrect = self.viewport().rect()
+                print (viewrect)
+                scenerect = self.transform().mapRect(rect)
+                factor = min(viewrect.width() / scenerect.width(),
+                             viewrect.height() / scenerect.height())
+                print(factor)
+                self.scale(factor, factor)
+            self._zoom = 0
+
+    def setPhoto(self, pixmap):
+        self._zoom = 0
+        if pixmap :
+            self._empty = False
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            self._photo.setPixmap(pixmap)
+            
+        else:
+            self._empty = True
+            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
+            self._photo.setPixmap(QPixmap())
+        self.fitInVieww()
+
+    def zoom(self, event):
+        if self.hasPhoto():
+            print (event.angleDelta().y())
+            if event.angleDelta().y() > 0:
+                factor = 1.25
+                self._zoom += 1
+            else:
+                factor = 0.8
+                self._zoom -= 1
+            if self._zoom > 0:
+                self.scale(factor, factor)
+            elif self._zoom == 0:
+                self.fitInVieww()
+                print('hi')
+            else:
+                self._zoom = 0
+
 
 
 m=0
@@ -36,7 +110,8 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.ui.PhantomShape.currentTextChanged.connect(self.shape)
         self.ui.Preb.currentTextChanged.connect(self.preb)
         self.ui.aquise.currentTextChanged.connect(self.acquisition)
-
+        self.ui.Zoom.currentTextChanged.connect(self.zoomComBox)
+        self.ui.maxErnstAngl.clicked.connect (self.maxErnestAngleCalculated)
         self.ui.PhantomSize.currentTextChanged.connect(self.phantom_size)
         self.ui.createPhantom.clicked.connect (self.create)
         self.ui.ernstAngle.clicked.connect (self.ernstAngleFun)
@@ -46,7 +121,27 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.plotWindow2 = self.ui.T2
         self.Acquisition = 0
         self.Prepration = 0
+        self.viewer = PhotoViewer(self.ui.graphicsView_Image)
+        self.viewer1 = PhotoViewer(self.ui.graphicsView_Phantom)
+        self.ui.Artifacts.currentTextChanged.connect(self.ArtifactFun)
+        self.AliasingFactor = 2
+        self.improperSampling = 0
+
     
+    def ArtifactFun(self,text):
+        if text =="Normal":
+            self.AliasingFactor=2
+            self.improperSampling = 0
+        
+        elif text=="Aliasing": 
+            self.AliasingFactor=3
+        
+        elif text=="ImproperSampling":
+            self.improperSampling = 1
+
+
+
+        
     
 
     def browse(self):
@@ -59,26 +154,35 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             #print (self.scale)
             self.img= ImageQt(image)
             self.img.save("2.png")
+
+            self.viewer.setPhoto(QPixmap.fromImage(self.img))
+
             self.ui.label.setPixmap(QPixmap.fromImage(self.img).scaled(512,512))
             self.ui.label.setAlignment(QtCore.Qt.AlignCenter)
             self.PD=np.asarray(np.load(fileName),dtype=np.uint8)
             self.t1=np.asarray(np.load(fileName),dtype=np.uint8)
             self.t2=np.asarray(np.load(fileName),dtype=np.uint8)
+            
+            #for i in range (self.size):
+            #    self.scale[i] = self.mappingToIntensity(self.scale[i])
+
+            self.Mo=[[[0 for k in range(3)] for j in range(self.size)] for i in range(self.size)]
+       
             for i in range (self.size):
                for j in range (self.size):
-                   
+                   self.Mo[i][j][2]=1
                    if self.scale[i][j]>=0 and self.scale[i][j]<=50 :
-                        self.t1[i][j]=1
-                        self.t2[i][j]=50
+                        self.t1[i][j]=10
+                        self.t2[i][j]=10
                    elif self.scale[i][j]<=100 and self.scale[i][j] >=50:
                         self.t1[i][j]=1200
-                        self.t2[i][j]=120
+                        self.t2[i][j]=100
                    elif self.scale[i][j] <=150 and self.scale[i][j] >=100 :
                         self.t1[i,j]=1300
-                        self.t2[i,j]=150
+                        self.t2[i,j]=120
                    elif self.scale[i,j] <=200 and self.scale[i,j] >=150:
                         self.t1[i,j]=1500
-                        self.t2[i,j]=170
+                        self.t2[i,j]=150
                    elif self.scale[i,j] <=255 and self.scale[i,j] >=200:
                         self.t1[i,j]=2000
                         self.t2[i,j]=200
@@ -86,8 +190,8 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                         break
 
 
-            self.t1 = self.mappingToIntensity(self.t1)
-            self.t2 = self.mappingToIntensity(self.t2)
+            #self.t1 = self.mappingToIntensity(self.t1)
+            #self.t2 = self.mappingToIntensity(self.t2)
 
             self.T1_img= gray2qimage(self.t1)
             self.T2_img= gray2qimage(self.t2)
@@ -105,8 +209,9 @@ class ApplicationWindow (QtWidgets.QMainWindow):
     
     def mappingToIntensity(self,array):
         maxx = np.max(array)
-        minn = np.min(array) 
-        array = (((255-2)/(maxx-minn))*(array-minn+2))
+        minn = np.min(array)
+        if(maxx>255 and min <0): 
+            array = (((255-2)/(maxx-minn))*(array-minn+2))
         return array
 
     def phantom_size(self, text):
@@ -207,6 +312,19 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             self.img.dump("circles(512).dat")
             QMessageBox.about(self, "Done", "phantom 'circles(512)'  created and saved ")
 
+    def linkedZoom(self,event):
+        self.viewer.zoom(event)
+        self.viewer1.zoom(event)
+    
+
+    def zoomComBox(self):
+       if (self.ui.Zoom.currentText()=="Linked"):
+           self.viewer.wheelEvent = self.linkedZoom
+           self.viewer1.wheelEvent = self.linkedZoom
+
+       elif (self.ui.Zoom.currentText()=="NonLinked"):
+           self.viewer.wheelEvent =self.viewer.zoom
+           self.viewer2.wheelEvent =self.viewer1.zoom
 
     def slider(self):
         self.img2=PIL.Image.open("2.png")
@@ -270,7 +388,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         for t in range (self.T):
             self.Mz=(1-np.exp(-t/self.t1[self.x,self.y]))
             Rx=np.array([[1, 0, 0] ,[0, (np.cos(fa)), (np.sin(fa))], [0 ,(-np.sin(fa)) ,(np.cos(fa))]])
-            M=np.matmul(Rx,self.signal[self.x][self.y])
+            M=np.matmul(Rx,self.Mo[self.x][self.y])
             M=np.sum(M)
             Mxy=np.exp(-t/self.t2[self.x,self.y])*M
             arr1.append(self.Mz)
@@ -296,29 +414,75 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             self.count=0
         else :
             print ('end') 
+        self.readInputParameters() 
+
+    def readInputParameters(self):
         self.TE() 
-        self.TR()  
-            
+        self.TR()
+        self.FA()  
+
+    def IR (self,t):
+        self.ui.preparationGraph.clear() 
+        tx=np.arange(0,t,.001)
+        T3=(2*np.sin(0.75*(tx-20))/(tx-20)) #RF 180 shifted 2
+        self.ui.preparationGraph.plot(tx,T3,pen = pg.mkPen('b', width=2))
+        #self.ui.preparationGraph.setText("Prepration:IR")
+
+    def T2_PREP (self,t):
+            self.ui.preparationGraph.clear() 
+            tx=np.arange(0,t+(2*10),.001)
+            T1=(np.sin((tx-10))/(tx-10))
+            T2=(np.sin(-(tx-(t+10)))/(tx-(t+10)))
+            self.ui.preparationGraph.plot(tx,T1,pen = [255,0,0])
+            self.ui.preparationGraph.plot(tx,T2,pen = [255,0,0])
+            #self.ui.lbl_prep.setText("Prepration:T2_PREP")
+
+    def Tagging(self):
+            self.ui.preparationGraph.clear() 
+            tx=np.arange(0,15,.001)
+            T3=(0.5*np.sin(2*tx))  #RF 180 shifted 2
+            self.ui.preparationGraph.plot(tx,T3,pen = [255,0,0])
+            #self.ui.preparationGraph.setText("Prepration:Tagging") 
+
     def ernstAngleFun(self):
+            self.lb = QGraphicsView()
+            self.lb=pg.PlotWidget()
             self.TR()
             vector= np.dot (130,np.matrix ([0,0,1])) 
             step = 5
             intensity = np.zeros(int(180/step))
-            j =0
-            for theta in range ( 0, 180 , step ):
+#            j =0
+            self.Simulation=[]
+            for theta in range ( 0, 180 ):
                 for i in range(10):
                     vector = self.rotationAroundYaxisMatrix(theta,vector)
                     vector = self.DecayRecoveryEquation(2600,50,1,vector,self.tr)
                 
                 x = np.ravel(vector)[0]
                 y = np.ravel(vector)[1]
-                intensity[j] = math.sqrt((x*x)+(y*y))
-                j+=1        
-            array = np.arange(0,180,step)
-            plt.plot(array,intensity)
-            plt.show()
-            #QMessageBox.about(self, "Error", "you should choose the sequence first")
-             
+                intensity = math.sqrt((x*x)+(y*y))
+                self.Simulation.append(intensity)
+            self.lb.plot(self.Simulation)
+            self.lb.show()
+    
+    def maxErnestAngleCalculated(self):
+        step = 5 
+        if self.Acquisition==3:
+            self.TR()
+            maxFlipAngle = math.acos( np.exp(-self.tr / 1200) )
+            maxFlipAngle = (maxFlipAngle * math.pi)/ 180
+        else:
+            result = np.where(self.Simulation == np.max(self.Simulation))
+            maxFlipAngleIndex = result[0][0]
+            maxFlipAngle = step*maxFlipAngleIndex
+        
+        self.ui.plainTextEdit_3.clear()
+        self.ui.plainTextEdit_3.appendPlainText(str(maxFlipAngle))
+
+
+
+
+
 
     def rotationAroundYaxisMatrix(self,theta,vector):
             vector = vector.transpose()
@@ -367,30 +531,110 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.T=self.ui.time_span.value()
         print(self.T)
     
-    def acquisition (self,text):
+    def SE (self):
+    
+        te = round(self.te/3)
+        self.ui.AcquisionGraph.clear()
+        tx=np.arange(0,self.tr)
+        Rf1=(np.sin(((self.f*2)/180)*(tx-te))/(tx-te)+10)
+        Rf2=(2*np.sin(((self.f*2)/180)*(tx-(te*2)))/(tx-(te*2))+10)
+
+        Gx = self.RectangularGraph(self.tr,8,(te*3),1,te)
+        Gy = self.RectangularGraph(self.tr,6,(te*4),1,te)
+        Readout = self.RectangularGraph(self.tr,4,(te*5),1,te)
         
+        self.ui.AcquisionGraph.plot(tx,Rf1,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Rf2,pen = [255,0,0])
+
+        self.ui.AcquisionGraph.plot(tx,Gx,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Gy,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Readout,pen = [255,0,0])
+
+
+    def GRE (self):
+
+        te = round(self.te/3)
+        self.ui.AcquisionGraph.clear()
+        tx=np.arange(0,self.tr)
+        Rf=(np.sin(((self.f*2)/180)*(tx-te))/(tx-te)+10)
+        Gx = self.RectangularGraph(self.tr,8,(te*2),1,te)
+        Gy = self.RectangularGraph(self.tr,6,(te*3),1,te)
+        Readout = self.RectangularGraph(self.tr,4,(te*4),1,te)
+        
+        self.ui.AcquisionGraph.plot(tx,Rf,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Gx,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Gy,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Readout,pen = [255,0,0])
+
+
+    def SSFP (self):
+
+        te = round(self.te/3)
+        self.ui.AcquisionGraph.clear()
+        tx=np.arange(0,self.tr)
+        Rf=(np.sin(((self.f*2)/180)*(tx-te))/(tx-te)+10)
+        Gx = self.RectangularGraph(self.tr,8,(te*2),1,te)
+        Gy = self.RectangularGraph(self.tr,6,(te*3),1,te)
+        Readout = self.RectangularGraph(self.tr,4,(te*4),1,te)
+        GxReversed = self.RectangularGraph(self.tr,8,(te*5+30),-1,te)
+        GyReversed = self.RectangularGraph(self.tr,6,(te*5+30),-1,te)
+
+        self.ui.AcquisionGraph.plot(tx,Rf,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Gx,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Gy,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,Readout,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,GxReversed,pen = [255,0,0])
+        self.ui.AcquisionGraph.plot(tx,GyReversed,pen = [255,0,0])
+
+
+
+
+
+    def RectangularGraph(self,tR,shiftDown,shiftRight,step,width):
+        z = []
+        
+        for i in range (0,tR):
+            if i < int(shiftRight):
+                z.append(shiftDown) 
+            elif i >= int(shiftRight) and i < int(width+shiftRight):
+                z.append(shiftDown+(step*1)) 
+            else:
+                z.append(shiftDown) 
+        return z
+
+    def acquisition (self,text):
+        self.readInputParameters() 
         if text =="SSFP":
             self.Acquisition=1
-        elif text=="SpinEcho": #squares
+            self.SSFP()
+        elif text=="SpinEcho": 
             self.Acquisition=2
-        elif text=="GRE": #circles
+            self.SE()
+        elif text=="GRE": 
             self.Acquisition=3
+            self.GRE()
         else: 
             self.Acquisition = 0
     
     def preb (self,text):
-        if text=="T1IR": #squares
+        if text=="T1IR": 
             self.Prepration=1
             self.nullTissue, ok = QInputDialog.getInt(self,"integer input dialog","enter Null Tissue T1")
+            self.IR(self.nullTissue * np.log(2))
             print(self.nullTissue)
-        elif text=="T2Preb": #circles
+        elif text=="T2Preb": 
             self.Prepration=2
             self.T2prebtime, ok = QInputDialog.getInt(self,"integer input dialog","enter time inteval for preb")
+            self.T2_PREP(self.T2prebtime)
             print(self.T2prebtime)
         elif text=="Tagging":
+            self.Tagging()
+            self.step, ok = QInputDialog.getInt(self,"integer input dialog","enter step for tagging preparation")
             self.Prepration=3
         else: 
-            self.Prepration =0 
+            self.Prepration =0
+            self.ui.preparationGraph.clear() 
+ 
 
     def prepration(self):
         if (self.Prepration==1):
@@ -410,8 +654,13 @@ class ApplicationWindow (QtWidgets.QMainWindow):
                         self.signal[i][j] = self.rotationAroundYaxisMatrix(-90,np.matrix(self.signal[i][j])) 
         elif (self.Prepration==0):
             print("nrg3 normal tany")
+            self.ui.preparationGraph.clear() 
+
+        
         elif (self.Prepration==3):
-            print("tagging")
+            for i in range(self.size):
+                    for j in range(0 ,self.size, self.step):
+                        self.signal[i][j][2] = np.dot ( np.ravel(self.signal[i][j])[2],  np.sin((np.pi*j)/(2*self.size)))
         else:
             QMessageBox.about(self, "Error", "you should choose the Preperation sequence first")
 
@@ -435,128 +684,24 @@ class ApplicationWindow (QtWidgets.QMainWindow):
 
     def Start(self):
         
-        self.TE() 
-        self.TR()
-        self.FA() 
+        self.readInputParameters() 
         self.Kspace =  np.zeros((self.size,self.size),dtype=np.complex_)
         self.startUpCycle()
         self.prepration()
         if (self.Acquisition==1):
-            self.SSFPForLoops()
+            self.Kspace = SSFPForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor)
+            self.ReconstructionImageAndKspace()    
         elif (self.Acquisition==2):
-            self.SpinEchoForLoops()
+            self.Kspace = SpinEchoForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor)
+            self.ReconstructionImageAndKspace()    
+
         elif (self.Acquisition==3):
-            self.GREForLoops()
+            self.Kspace = GREForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor,self.improperSampling)
+            self.ReconstructionImageAndKspace()    
+
         else:
             QMessageBox.about(self, "Error", "you should choose the acquisition sequence first")
     
-    def SpinEchoForLoops(self):    
-
-        for Ki in range(self.Kspace.shape[0]):
-            print('Ki: ',Ki)
-
-            for i in range(self.size):
-                    for j in range(self.size):
-                        self.signal[i][j] =  self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.te/2))
-                        self.signal[i][j] =  self.rotationAroundYaxisMatrix((self.f*2),np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.te/2))
-
-            # for kspace column
-            for Kj in range ( self.Kspace.shape[1]):
-                print('Kj: ',Kj)
-                GxStep = ((2 * math.pi) /  self.Kspace.shape[0]) * Kj
-                GyStep = ((2 * math.pi) / self.Kspace.shape[1]) * Ki            
-                
-                for i in range(self.size):
-                    for j in range(self.size):
-                        totalTheta = (GxStep*j)+ (GyStep*i)
-                        z = abs(complex(np.ravel(self.signal[i][j])[0],np.ravel(self.signal[i][j])[1]))
-                        self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
-            
-            for i in range(self.size):
-                for j in range(self.size):
-                    self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr))
-                    self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-
-
-        self.ReconstructionImageAndKspace()
-
-    def SSFPForLoops(self):    
-        angle60 = True
-
-        for i in range(self.size):
-            for j in range(self.size):
-                self.signal[i][j] =  self.rotationAroundYaxisMatrix((self.f/2),np.matrix(self.signal[i][j]))
-                self.signal[i][j] =  self.DecayRecoveryEquation(self.t1[i][j],self.t2[i][j],1,np.matrix(self.signal[i][j]),self.tr)
-                self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-        
-        for Ki in range(self.Kspace.shape[0]):
-            print('Ki: ',Ki)
-            #move in each image pixel            
-            if angle60 :
-                theta = -self.f
-            else:
-                theta = self.f
-                
-            for i in range(self.size):
-                    for j in range(self.size):
-                        self.signal[i][j] =  self.rotationAroundYaxisMatrix(theta,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
-
-
-            # for kspace column
-            for Kj in range ( self.Kspace.shape[1]):
-                print('Kj: ',Kj)
-                GxStep = ((2 * math.pi) /  self.Kspace.shape[0]) * Kj
-                GyStep = ((2 * math.pi) / self.Kspace.shape[1]) * Ki            
-                
-                for i in range(self.size):
-                    for j in range(self.size):
-                        totalTheta = (GxStep*j)+ (GyStep*i)
-                        z = abs(complex(np.ravel(self.signal[i][j])[0],np.ravel(self.signal[i][j])[1]))
-                        self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
-            
-            for i in range(self.size):
-                for j in range(self.size):
-                    self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr))
-                    self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-
-            angle60 = not angle60
-
-        self.ReconstructionImageAndKspace()
-    
-    
-    def GREForLoops(self): 
-
-        for Ki in range(self.Kspace.shape[0]):
-            print('Ki: ',Ki)
-            #move in each image pixel            
-
-            for i in range(self.size):
-                for j in range(self.size):
-                        self.signal[i][j] =  self.rotationAroundYaxisMatrix(self.f,np.matrix(self.signal[i][j]))
-                        self.signal[i][j] = self.signal[i][j] * np.exp(-self.te/self.t2[i][j])
-
-            # for kspace column
-            for Kj in range (self.Kspace.shape[1]):
-                print('Kj: ',Kj)
-                GxStep = ((2 * math.pi) / self.Kspace.shape[0]) * Kj
-                GyStep = ((2 * math.pi) /self.Kspace.shape[1]) * Ki
-                
-                
-                for i in range(self.size):
-                    for j in range(self.size):
-                        totalTheta = (GxStep*j)+ (GyStep*i)
-                        z = abs(complex(np.ravel(self.signal[i][j])[0],np.ravel(self.signal[i][j])[1]))
-                        self.Kspace[Ki,Kj]= self.Kspace[Ki,Kj] + (z * np.exp(1j*totalTheta))
-
-            for i in range(self.size):
-                for j in range(self.size):
-                    self.signal[i][j] = self.DecayRecoveryEquation(self.t1[i,j],self.t2[i,j],1,np.matrix(self.signal[i][j]),(self.tr))
-                    self.signal[i][j] = [[0,0,np.ravel(self.signal[i][j])[2]]]
-        
-        self.ReconstructionImageAndKspace()
 
     
     def ReconstructionImageAndKspace(self):
@@ -568,11 +713,14 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         Kspacefft = np.fft.fft2(self.Kspace)
         #Kspaceifft = np.fft.ifft2(self.Kspace)
         Kspacefft = abs(Kspacefft)
-        Kspacefft = self.mappingToIntensity(np.array(np.round_(Kspacefft)))
+        Kspacefft = np.array(np.round_(Kspacefft))
         imsave("image.png", Kspacefft)
 
         pixmap = QtGui.QPixmap("image.png")
+        self.viewer1.setPhoto(pixmap)
+
         pixmap = pixmap.scaled(512,512)
+        
         self.ui.label_3.setPixmap(pixmap)
 
             
