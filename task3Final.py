@@ -18,7 +18,8 @@ from qimage2ndarray import gray2qimage
 from imageio import imsave, imread
 from shapeloggin import phantom 
 from matplotlib import pyplot as plt
-from  cython import SpinEchoForLoops , SSFPForLoops, GREForLoops
+import cythonfile
+# cythonfile.SpinEchoForLoops , cythonfile.SSFPForLoops, cythonfile.GREForLoops
 
 
 class PhotoViewer(QtWidgets.QGraphicsView):
@@ -114,7 +115,7 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.ui.maxErnstAngl.clicked.connect (self.maxErnestAngleCalculated)
         self.ui.PhantomSize.currentTextChanged.connect(self.phantom_size)
         self.ui.createPhantom.clicked.connect (self.create)
-        self.ui.ernstAngle.clicked.connect (self.ernstAngleFun)
+        self.ui.ernstAngle.clicked.connect (self.drawErnstAngle)
         self.ui.start.clicked.connect (self.Start)
         self.ui.horizontalSlider.valueChanged.connect(self.slider)
         self.plotWindow = self.ui.T1
@@ -444,43 +445,60 @@ class ApplicationWindow (QtWidgets.QMainWindow):
             self.ui.preparationGraph.plot(tx,T3,pen = [255,0,0])
             #self.ui.preparationGraph.setText("Prepration:Tagging") 
 
+
+
     def ernstAngleFun(self):
-            self.lb = QGraphicsView()
-            self.lb=pg.PlotWidget()
             self.TR()
-            vector= np.dot (130,np.matrix ([0,0,1])) 
-            step = 5
-            intensity = np.zeros(int(180/step))
-#            j =0
+
+            try:
+                data = np.average(self.PD)
+            except:
+                QMessageBox.about(self, "Error", "Please browse a phantom")
+
+            data = np.average(self.PD)
+            vector= np.dot (data,np.matrix ([0,0,1])) 
+            self.step = 5
+            self.intensity = np.zeros(int(180/self.step))
+            j =0
             self.Simulation=[]
-            for theta in range ( 0, 180 ):
+            for theta in range ( 0, 180,5 ):
                 for i in range(10):
                     vector = self.rotationAroundYaxisMatrix(theta,vector)
                     vector = self.DecayRecoveryEquation(2600,50,1,vector,self.tr)
-                
                 x = np.ravel(vector)[0]
                 y = np.ravel(vector)[1]
-                intensity = math.sqrt((x*x)+(y*y))
-                self.Simulation.append(intensity)
-            self.lb.plot(self.Simulation)
-            self.lb.show()
-    
+                self.intensity[j] = math.sqrt((x*x)+(y*y))
+                j=j+1
+            
+            
+    def drawErnstAngle(self):
+        self.lb = QGraphicsView()
+        self.lb=pg.PlotWidget()
+        self.ernstAngleFun()
+        array = np.arange(0,180,self.step)
+
+        self.lb.plot(array,self.intensity)
+        self.lb.show()
+
     def maxErnestAngleCalculated(self):
-        step = 5 
-        if self.Acquisition==3:
-            self.TR()
-            maxFlipAngle = math.acos( np.exp(-self.tr / 1200) )
-            maxFlipAngle = (maxFlipAngle * math.pi)/ 180
-        else:
-            result = np.where(self.Simulation == np.max(self.Simulation))
-            maxFlipAngleIndex = result[0][0]
-            maxFlipAngle = step*maxFlipAngleIndex
-        
-        self.ui.plainTextEdit_3.clear()
-        self.ui.plainTextEdit_3.appendPlainText(str(maxFlipAngle))
-
-
-
+        self.step = 5
+        try:
+            if self.Acquisition==3:
+                self.TR()
+                print(self.tr)
+                maxFlipAngle = math.acos( np.exp(-self.tr / 1200) )
+                maxFlipAngle = (maxFlipAngle*180)/math.pi
+                print(maxFlipAngle)
+            else:
+                result = np.where(self.intensity == np.max(self.intensity))
+                maxFlipAngleIndex = result[0][0]
+                maxFlipAngle = self.step*maxFlipAngleIndex
+            
+            self.ui.plainTextEdit_3.clear()
+            self.ui.plainTextEdit_3.appendPlainText(str(int(maxFlipAngle)))
+        except:
+            self.ernstAngleFun()
+            self.maxErnestAngleCalculated()
 
 
 
@@ -689,14 +707,14 @@ class ApplicationWindow (QtWidgets.QMainWindow):
         self.startUpCycle()
         self.prepration()
         if (self.Acquisition==1):
-            self.Kspace = SSFPForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor)
+            self.Kspace = cythonfile.SSFPForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor)
             self.ReconstructionImageAndKspace()    
         elif (self.Acquisition==2):
-            self.Kspace = SpinEchoForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor)
+            self.Kspace = cythonfile.SpinEchoForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor)
             self.ReconstructionImageAndKspace()    
 
         elif (self.Acquisition==3):
-            self.Kspace = GREForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor,self.improperSampling)
+            self.Kspace = cythonfile.GREForLoops(self.Kspace,self.size,self.signal,self.f,self.t1,self.t2,self.te,self.tr,self.AliasingFactor,self.improperSampling)
             self.ReconstructionImageAndKspace()    
 
         else:

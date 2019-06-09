@@ -6,12 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1138</width>
-    <height>626</height>
+    <width>1154</width>
+    <height>622</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color:rgb(240, 230, 255)</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">
@@ -34,9 +37,6 @@
     <property name="autoFillBackground">
      <bool>false</bool>
     </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(255, 255, 255)</string>
-    </property>
     <property name="tabPosition">
      <enum>QTabWidget::West</enum>
     </property>
@@ -44,7 +44,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -118,7 +118,7 @@
             </font>
            </property>
            <property name="styleSheet">
-            <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+            <string notr="true">background-color:rgb(197, 197, 255)</string>
            </property>
            <item>
             <property name="text">
@@ -153,7 +153,7 @@
             </font>
            </property>
            <property name="styleSheet">
-            <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+            <string notr="true">background-color:rgb(197, 197, 255)</string>
            </property>
            <property name="currentText">
             <string>Phantom size:</string>
@@ -290,7 +290,8 @@
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(0, 0, 0);</string>
+       <string notr="true">background-color:rgb(227, 222, 255)
+</string>
       </property>
      </widget>
      <widget class="PlotWidget" name="preparationGraph">
@@ -303,7 +304,7 @@
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(0, 0, 0);</string>
+       <string notr="true">background-color:rgb(227, 222, 255)</string>
       </property>
      </widget>
      <widget class="QPushButton" name="maxErnstAngl">
@@ -364,6 +365,9 @@
         <bold>true</bold>
        </font>
       </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:rgb(227, 222, 255)</string>
+      </property>
       <property name="readOnly">
        <bool>true</bool>
       </property>
@@ -380,14 +384,14 @@
       <item row="3" column="1">
        <widget class="PlotWidget" name="T2">
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(0, 0, 0);</string>
+         <string notr="true">background-color:rgb(227, 222, 255)</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="PlotWidget" name="T1">
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(0, 0, 0);</string>
+         <string notr="true">background-color:rgb(227, 222, 255)</string>
         </property>
        </widget>
       </item>
@@ -428,7 +432,7 @@
          </font>
         </property>
         <property name="styleSheet">
-         <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+         <string notr="true">background-color:rgb(227, 222, 255)</string>
         </property>
         <property name="prefix">
          <string>t = </string>
@@ -494,7 +498,7 @@
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+          <string notr="true">background-color:rgb(227, 222, 255)</string>
          </property>
          <property name="prefix">
           <string>Start Up Cycle = </string>
@@ -518,7 +522,8 @@
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+          <string notr="true">background-color:rgb(197, 197, 255)
+</string>
          </property>
          <property name="currentText">
           <string>Artifacts:</string>
@@ -559,6 +564,9 @@
            <height>64</height>
           </size>
          </property>
+         <property name="styleSheet">
+          <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(60, 124, 166, 217), stop:0.631841 rgba(191, 189, 193, 245))</string>
+         </property>
          <property name="frameShape">
           <enum>QFrame::Box</enum>
          </property>
@@ -586,6 +594,9 @@
            <width>64</width>
            <height>64</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(60, 124, 166, 217), stop:0.631841 rgba(191, 189, 193, 245))</string>
          </property>
          <property name="frameShape">
           <enum>QFrame::Box</enum>
@@ -660,7 +671,8 @@
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+          <string notr="true">background-color:rgb(197, 197, 255)
+</string>
          </property>
          <item>
           <property name="text">
@@ -682,14 +694,14 @@
        <item>
         <widget class="QGraphicsView" name="graphicsView_Image">
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(0, 0, 0);</string>
+          <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(60, 124, 166, 217), stop:0.631841 rgba(191, 189, 193, 245))</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QGraphicsView" name="graphicsView_Phantom">
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(0, 0, 0);</string>
+          <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(60, 124, 166, 217), stop:0.631841 rgba(191, 189, 193, 245))</string>
          </property>
         </widget>
        </item>
@@ -738,7 +750,7 @@
      <cursorShape>CrossCursor</cursorShape>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(0, 0, 0, 242), stop:0.631841 rgba(191, 189, 193, 245))</string>
+     <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(60, 124, 166, 217), stop:0.631841 rgba(191, 189, 193, 245))</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -784,6 +796,9 @@
       <bold>true</bold>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(227, 222, 255)</string>
+    </property>
     <property name="plainText">
      <string>T2 Image</string>
     </property>
@@ -807,7 +822,7 @@
      <cursorShape>CrossCursor</cursorShape>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(0, 0, 0, 242), stop:0.631841 rgba(191, 189, 193, 245))</string>
+     <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(60, 124, 166, 217), stop:0.631841 rgba(191, 189, 193, 245))</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -853,16 +868,19 @@
       <bold>true</bold>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(227, 222, 255)</string>
+    </property>
     <property name="plainText">
      <string>T1 Image</string>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>540</x>
       <y>10</y>
-      <width>271</width>
+      <width>291</width>
       <height>91</height>
      </rect>
     </property>
@@ -878,7 +896,7 @@
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+        <string notr="true">background-color:rgb(197, 197, 255)</string>
        </property>
        <property name="currentText">
         <string>Preparation:</string>
@@ -921,7 +939,7 @@
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+        <string notr="true">background-color:rgb(197, 197, 255)</string>
        </property>
        <property name="currentText">
         <string>Acquisition:</string>
@@ -955,10 +973,10 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>820</x>
+      <x>840</x>
       <y>10</y>
       <width>301</width>
       <height>561</height>
@@ -980,6 +998,10 @@
          <bold>true</bold>
         </font>
        </property>
+       <property name="styleSheet">
+        <string notr="true">background-color:
+rgb(215, 218, 255)</string>
+       </property>
        <property name="readOnly">
         <bool>true</bool>
        </property>
@@ -1000,7 +1022,7 @@
         <cursorShape>CrossCursor</cursorShape>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(0, 0, 0, 242), stop:0.631841 rgba(191, 189, 193, 245))</string>
+        <string notr="true">background-color:qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:0, stop:0.0497512 rgba(60, 124, 166, 217), stop:0.631841 rgba(191, 189, 193, 245))</string>
        </property>
        <property name="frameShape">
         <enum>QFrame::Box</enum>
@@ -1043,13 +1065,16 @@
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+        <string notr="true">background-color:rgb(227, 222, 255)</string>
        </property>
        <property name="prefix">
         <string>FA = </string>
        </property>
        <property name="maximum">
         <number>360</number>
+       </property>
+       <property name="singleStep">
+        <number>0</number>
        </property>
        <property name="value">
         <number>90</number>
@@ -1067,7 +1092,10 @@
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+        <string notr="true">background-color:rgb(227, 222, 255)</string>
+       </property>
+       <property name="inputMethodHints">
+        <set>Qt::ImhDigitsOnly</set>
        </property>
        <property name="prefix">
         <string>TR = </string>
@@ -1075,8 +1103,14 @@
        <property name="maximum">
         <number>20000</number>
        </property>
+       <property name="singleStep">
+        <number>0</number>
+       </property>
        <property name="value">
         <number>1000</number>
+       </property>
+       <property name="displayIntegerBase">
+        <number>10</number>
        </property>
       </widget>
      </item>
@@ -1091,7 +1125,7 @@
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:rgb(240, 240, 240);color: rgb(44, 44, 44)</string>
+        <string notr="true">background-color:rgb(227, 222, 255)</string>
        </property>
        <property name="suffix">
         <string/>
@@ -1102,8 +1136,11 @@
        <property name="maximum">
         <number>2000</number>
        </property>
+       <property name="singleStep">
+        <number>0</number>
+       </property>
        <property name="value">
-        <number>100</number>
+        <number>400</number>
        </property>
       </widget>
      </item>
@@ -1115,7 +1152,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1138</width>
+     <width>1154</width>
      <height>20</height>
     </rect>
    </property>

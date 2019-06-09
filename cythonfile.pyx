@@ -1,8 +1,10 @@
-import numpy as np
+
 import math
+import numpy as np
 
 
-def rotationAroundYaxisMatrix(theta,vector):
+
+cpdef rotationAroundYaxisMatrix(theta,vector):
             vector = vector.transpose()
             theta = (math.pi / 180) * theta
             R = np.matrix ([[np.cos(theta), 0, np.sin(theta)], [0, 1, 0], [-np.sin(theta), 0, np.cos(theta)]] )
@@ -10,7 +12,7 @@ def rotationAroundYaxisMatrix(theta,vector):
             R = R.transpose()
             return np.matrix(R)
 
-def rotationAroundZaxisMatrixXY(TR,speed,vector,time): 
+cpdef rotationAroundZaxisMatrixXY(TR,speed,vector,time): 
             vector = vector.transpose()
             theta = speed * (time/ TR)
             theta = (math.pi / 180) * theta
@@ -20,7 +22,7 @@ def rotationAroundZaxisMatrixXY(TR,speed,vector,time):
             return np.matrix(XY) 
 
 
-def DecayRecoveryEquation(T1,T2,PD,vector,time):
+cpdef DecayRecoveryEquation(T1,T2,PD,vector,time):
             vector = vector.transpose()
             Decay =np.matrix([[np.exp(-time/T2),0,0],[0,np.exp(-time/T2),0],[0,0,np.exp(-time/T1)]])
             Decay = np.dot(Decay,vector)
@@ -34,7 +36,7 @@ def DecayRecoveryEquation(T1,T2,PD,vector,time):
             RD = RD.transpose()
             return RD
 
-def SpinEchoForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor):           
+cpdef SpinEchoForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor):           
         
 
         for Ki in range(Kspace.shape[0]):
@@ -67,7 +69,7 @@ def SpinEchoForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor):
 
         return Kspace
 
-def SSFPForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor):    
+cpdef SSFPForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor):    
         angle60 = True
 
         for i in range(size):
@@ -111,7 +113,7 @@ def SSFPForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor):
 
         return Kspace 
     
-def GREForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor,improperSampling): 
+cpdef GREForLoops(Kspace,size,signal,f,t1,t2,te,tr,AliasingFactor,improperSampling): 
 
         for Ki in range(Kspace.shape[0]):
             print('Ki: ',Ki)
